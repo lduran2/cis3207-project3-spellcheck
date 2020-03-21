@@ -1,295 +1,183 @@
 /*
  * ./parser.c
- * Parses the command line.
- * Created: 2020-03-04 23:50
+ * Parses a string and validates every word contained therein.
+ * Created: 2020-03-20 20:10
  * Author : Leomar Duran <https://github.com/lduran2>
  * For    : CIS 3207, Spring 2020
  */
 #include "parser.h"
 
 /**
- * @returns the subclass that the *needle is a member of the
- * superset **haystack.
+ * Parses the string *haystack and validates every word contained
+ * therein.
  * @params
- *   *needle    : char = the string to classify
- *   **haystack : char = the superset representing the class
- */
-char
-*subclass_of(char *needle, char **haystack)
-{
-	int len;	/* stores the haystack length */
-	/* loop through the class strings */
-	for (; *haystack; ++haystack) {
-		/* find length of the current class string */
-		len = strlen(*haystack);
-		/* compare to the current needle string*/
-		if (0 == strncmp(*haystack, needle, len)) {
-			/* if found, return the string in haystack */
-			return *haystack;
-		}
-	} /* end for (; *haystack; ) */
-	/* otherwise, it was not found, so return NULL */
-	return NULL;
-} /* end *subclass_of(char*, char**) */
-
-/**
- * @returns true if the *needle is a member of the superclass
- * **haystack.
- * @params
- *   *needle    : char = the string to classify
- *   **haystack : char = the superset representing the class
- */
-bool
-in_class(char *needle, char **haystack)
-{
-	/* the needle is in the haystack class */
-	/* if its equivalent subclass is not NULL */
-	return (NULL != subclass_of(needle, haystack));
-} /* end in_class(char*, char**) */
-
-/**
- * Enqueues the string between *offset inclusive and *end exclusive.
- * @params
- *   *queue  : Queue = the queue whereto, to add
- *   *offset : char  = the beginning of the subtring (inclusive)
- *   *end    : char  = the end of the substring (exclusive)
- */
-void
-push_next_token(Queue *queue, char *offset, char *end)
-{
-	int len;	/* length of the new token */
-	char *new_token = NULL;	/* the new token */
-
-	/* calculate and check the length */
-	len = end - offset;
-	/* if the length is 0, then don't push */
-	if (0 == len) return;
-
-	/* copy the new token */
-	new_token = malloc(len * sizeof(char));
-	strncpy(new_token, offset, len);
-	/* enqueue the new token */
-	queue_enqueue(queue, node_new(new_token));
-} /* end push_next_token(Queue*, char*, char*) */
-
-/**
- * Parses the string *haystack and stores the number of tokens in
- * *pargc and the tokens themselves in ***pargv.
- * @params
- *   *haystack : char = the string to search
- *   *pargc    : int  = pointer to the argument count
- *   ***pargv  : char = pointer to the argument values
- *                      (NULL terminated)
+ *   *out      : FILE   = file whereto to print validations
+ *   *haystack : char   = the string to search
+ *   *dict     : FILE   = the dictionary file
  * @returns true on success, false on failure.
  */
-bool
-parse(char *haystack, int *pargc, char ***pargv)
+void
+parse(FILE *out, char *haystack, FILE *dict)
 {
-	/* queue to store the unknown number of arguments temporarily */
-	Queue *qargv = queue_new();
-
-	/* the quotation delimiter class */
-	/* substrings in quotation delimiters are treated as single */
-	/* characters */
-	char *delims[] = { "\"", "'", NULL };
-	/* the comment prefix class */
-	/* these characters make the end of a line */
-	char *comment[] = { "#", NULL };
-	/* the white space separator class */
-	/* these strings split tokens up */
-	char *separators[] = { " ", "\t", "\r", "\n", NULL };
-	/* the self token class */
-	/* these strings are tokens onto themselves */
-	char *tokens[] = { "<", "|", ">>", ">", "&", NULL };
-
-	/* subclass of the delimiters that the current haystack is in */
-	char *delim_subclass;
 	/* whether the state is in the separator class */
 	bool in_separator = false;
-	/* subclass of tokens that the current haystack is in */
-	char *token_subclass;
 
-	/* for creating new tokens */
+	/* for creating new words */
 	char *offset = haystack;	/* offset within haystack */
 
 	/* loop until end of haystack */
 	while (*haystack) {
 		/* state: in regular (non-separator) text */
 		if (!in_separator) {
-			/* if the current string is in the */
-			/* delimiter class */
-			delim_subclass = subclass_of(haystack, delims);
-			if (NULL != delim_subclass) {
-				/* seek past the next instance */
-				/* of the delimiter */
-				haystack = strstr(haystack + 1,
-					delim_subclass);
-				/* if the next instance is not found*/
-				if (NULL == haystack) {
-					/* print an error */
-					fprintf(stderr, "Unmatched %s.\n", delim_subclass);
-					/* return failure */
-					return false;
-				};
-				++haystack;
-				continue;
-			} /* end if (NULL != delim_subclass) */
-
-			/* break on first comment string */
-			if (in_class(haystack, comment)) {
-				break;
-			} /* end if (in_class(haystack, comment)) */
-
-			/* if the current string is in the */
-			/* separator class  */
-			if (in_class(haystack, separators)) {
-				/* push the string so far into the stack */
-				push_next_token(qargv, offset, haystack);
+			/* if the current string is in the separator */
+			/* class, i.e., not a word character */
+			if (!is_word_char(*haystack)) {
+				/* validate the string so far */
+				validate_next_word
+					(out, offset, haystack, dict);
 				/* update the state */
 				in_separator = true;
 			} /* end if (in_class(haystack, separators)) */
-
-			/* if the current string is in the */
-			/* token class */
-			token_subclass = subclass_of(haystack, tokens);
-			if (NULL != token_subclass) {
-				/* push the string so far onto stack */
-				push_next_token(qargv, offset, haystack);
-				/* push the token too */
-				queue_enqueue(qargv, node_new(token_subclass));
-				/* seek after the token */
-				haystack += strlen(token_subclass);
-				/* update the offset */
-				offset = haystack;
-				/* stay on the new character */
-				continue;
-			} /* end if (NULL != token_subclass) */
 		} /* end if (!in_separator) */
 		/* state: in the separator class */
 		else {
-			/* if the current string is STILL in the */
+			/* if the current string is no longer in the */
 			/* separator class */
-			if (in_class(haystack, separators)) {
-				++haystack;
-			} /* end if (in_class(haystack, separators)) */
-			/* otherwise */
-			else {
+			if (is_word_char(*haystack)) {
 				/* exit the in_separator state */
 				in_separator = false;
 				/* update the offset */
 				offset = haystack;
 				/* stay on same character */
 				continue;
-			} /* end if (!in_class(haystack, separators)) */
+			} /* end if (is_word_char(*haystack)) */
 		} /* end if (in_separator) */
 
 		/* priority logic: continue to next character */
 		++haystack;
 	} /* end while (*haystack) */
 
-	/* push the last token onto the stack */
-	push_next_token(qargv, offset, haystack);
-
-	/* set pargc and pargv */
-	*pargc = (int)queue_length(qargv);
-	/* pargv is an array copy of qargv */
-	queue_to_array(qargv, (void***)pargv, sizeof(char*));
-
-	/* return success */
-	return true;
+	/* validate the last word */
+	validate_next_word(out, offset, haystack, dict);
 } /* end parse(char *haystack, int *pargc, char ***pargv) */
 
 /**
- * Splits an argument list by the redirection tokens.  Each new element
- * starts with a redirection token, except the first which starts with
- * an empty string.
+ * Validates the string between *offset inclusive and *end exclusive.
  * @params
- *   **argv : char = the argument list
- * @returns the queue of redirection processes.
+ *   *out    : FILE = the file to print to
+ *   *offset : char  = the beginning of the subtring (inclusive)
+ *   *end    : char  = the end of the substring (exclusive)
  */
-Queue
-*process_splitter(char **argv) {
-	/* the redirection tokens */
-	char *tokens[] = { "<", "|", ">>", ">", "&", NULL };
+void
+validate_next_word(FILE *out, char *offset, char *end, FILE *dict)
+{
+	int len;	/* length of the new word */
+	char *new_word = NULL;	/* the new word */
+	const char *result;	/* the result of validation */
 
-	char **curr;	/* the current argument */
+	/* calculate and check the length */
+	len = end - offset;
+	/* if the length is 0, then don't print */
+	if (0 == len) return;
 
-	/* arrays were not playing nice here, so I went with queues */
-	/* also, access will be sequential either way */
-	Queue *processes = queue_new();	/* all processes */
-	Queue *process = queue_new();	/* each process */
-	/* arguments will always start at 1 */
-	queue_enqueue(process, node_new(""));
+	/* copy the new word */
+	new_word = malloc(len * sizeof(char));
+	strncpy(new_word, offset, len);
 
-	/* for each argument */
-	for (curr = argv; *curr; ++curr) {
-		/* if the argument is a redirection token: */
-		if (in_class(*curr, tokens)) {
-			/* enqueue the process */
-			queue_enqueue(processes, node_new(process));
-			/* start a new one */
-			process = queue_new();
-		} /* end if (in_class(*curr, tokens)) */
-		queue_enqueue(process, node_new(*curr));
-	} /* end for (curr = argv; *curr; ++curr) */
-	/* enqueue the final process */
-	queue_enqueue(processes, node_new(process));
+	/* validate the new word */
+	result = validate(new_word, dict);
 
-	return processes;
-
-} /* end *process_splitter(char**) */
+	/* print and free the result */
+	fprintf(out, "%s %s\n", new_word, result);
+	free(new_word);
+} /* end validate_next_word
+	(FILE *out, char *offset, char *end, FILE *dict)
+   */
 
 /**
- * Wraps the getline method by giving the user a prompt first.
+ * Validates a word against the dictionary.
  * @params
- *   *prompt   : char = displayed to the user before accepting input
- *   *pargc    : int  = pointer to argument count
- *   ***pargv  : char = pointer to parsed argument values
- *                         (NULL terminated)
- *   *success  : bool = whether parsing was successful
- *   *instream : FILE = the input stream
- * @returns true if no exit code; false on exit code.
+ *   *key  : char = the word to validate
+ *   *dict : FILE = dictionary whereagainst to check the word
+ * @returns
+ *   "OK"         -- if the key is found in the dictionary
+ *   "MISSPELLED" -- otherwise
+ */
+const char*
+validate(char *key, FILE *dict)
+{
+	/* constants to return */
+	static const char *OK = "OK";	/* success */
+	static const char *MISSPELLED = "MISSPELLED";	/* failture */
+
+	char *test = "";	/* the current word in the dictionary */
+
+	/* restart the dictionary */
+	rewind(dict);
+
+	/* search the dictionary */
+	while (read_line(dict, &test)) {
+		/* if found the key */
+		if (0 == strcmp(key, test)) {
+			/* return success */
+			return OK;
+		} /* end if (0 == strcmp(key, test)) */
+	} /* end while (0 <= fscanf(dict, "%s\n", &test)) */
+
+	/* return failure */
+	return MISSPELLED;
+} /* end validate(char *word, FILE *dict) */
+
+/**
+ * Reads a line from the file.
+ * @params
+ *   *in    : FILE  = file wherefrom to read
+ *   *pline : char* = pointer to the string read
+ * @returns whether a line was read
  */
 bool
-promptline(
-	char* prompt, int *pargc, char ***pargv, bool *success,
-	FILE *instream)
+read_line(FILE *in, char **pline)
 {
-	char *line = NULL;	/* line read in */
+	char *line;	/* local read */
 	char *raw_line = NULL;	/* line read in, raw from getline */
 	size_t n = 0;	/* line length */
 
-	/* prompt and read line */
-	fprintf(stderr, "%s", prompt);	/* write the prompt */
-	fflush(stderr); /* flush the stderr buffer */
 	/* accept a new raw line */
-	getline(&raw_line, &n, stdin);
+	getline(&raw_line, &n, in);
 
 	/* get the length removing the line feed '\n' */
 	n = (strlen(raw_line) - 1);
-	/* Ctrl+D: shortcut for exit */
-	if (0 == n) { /* the user pressed Ctrl+D */
-		*success = true;	/* report success */
-		printf("exit\n");	/* show exit */
-		return false;	/* and exit */
-	} /* if (0 == n) */
+	/* return false if no characters were read */
+	if ((long signed)n <= 0) {
+		return false;
+	} /* end read_line(FILE *in, char **pline) if (n <= 0) */
 
 	/* properly terminate the line */
 	line = malloc((n + 1) * sizeof(char));
+	//printf("'%s'\n", raw_line);
+	//printf("%lu\n", n);
 	strncpy(line, raw_line, n);
 	strcat(line, "\0");
+	//printf("'%s'\n", line);
 
-	/* parse the line, but on error: */
-	*success = parse(line, pargc, pargv); /* report if success */
-	if (!*success) {
-		return true;	/* do NOT exit on error though */
-	} /* if (!*success) */
+	/* stores the line */
+	*pline = line;
+	/* return that a string was read */
+	return true;
+} /* end read_line(FILE *in, char **pline) */
 
-	/* continue conditions */
-	return (
-		/* user did typed the exit command */
-		(0 != strcmp(**pargv, "exit"))
-		/* user did typed the quit command */
-		&& (0 != strcmp(**pargv, "quit"))
+/**
+ * Test whether a character is a word character.
+ * @params
+ *   c : char = character to test
+ * @returns whether a character is a word character
+ */
+bool
+is_word_char(char c)
+{
+	return (((c >= 'a') && (c <= 'z'))	/* lowercase */
+		|| ((c >= 'A') && (c <= 'Z'))	/* uppercase */
+		|| (c == '\'')	/* apostrophe */
 	);
-} /* end promptline(char*, char**, size_t*, bool*, FILE*) */
+} /* end is_word_char(char c) */
+
