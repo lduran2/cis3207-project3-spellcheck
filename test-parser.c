@@ -11,8 +11,14 @@
 int
 main(int argc, int argv)
 {
-	/* message to test */
-	char *message = "Hello, world! Hello, mundo! end";
+	/* messages to test */
+	char *messages[] = {
+		"Hello, world! Hello, mundo! end",
+		"Hello, world! Hello, mundo!",
+		"Hello, world! Hello, mundo!!!",
+		NULL
+	};
+	char **pmessage = messages;	/* pointer to message */
 
 	FILE *dict;	/* default dictionary */
 
@@ -24,7 +30,12 @@ main(int argc, int argv)
 		return 1;
 	} /* end if (NULL == (dict = fopen(DEFAULT_DICTIONARY))) */
 
-	parse(stdout, message, dict);
+	/* test each message */
+	for (; *pmessage; ++pmessage) {
+		printf("%s\n", *pmessage);
+		parse(stdout, *pmessage, dict);
+		printf("\n");
+	}
 
 	return 0;
 }

@@ -1,0 +1,9 @@
+# NFS files
+*.nfs*
+
+# objects
+*.o
+
+# executables
+*.out
+

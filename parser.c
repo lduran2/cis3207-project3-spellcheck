@@ -57,8 +57,11 @@ parse(FILE *out, char *haystack, FILE *dict)
 		++haystack;
 	} /* end while (*haystack) */
 
-	/* validate the last word */
-	validate_next_word(out, offset, haystack, dict);
+	/* if last character was in a word: */
+	if (!in_separator) {
+		/* validate the last word */
+		validate_next_word(out, offset, haystack, dict);
+	}
 } /* end parse(char *haystack, int *pargc, char ***pargv) */
 
 /**
@@ -110,15 +113,23 @@ validate(char *key, FILE *dict)
 	static const char *OK = "OK";	/* success */
 	static const char *MISSPELLED = "MISSPELLED";	/* failture */
 
-	char *test = "";	/* the current word in the dictionary */
+	char *dict_word = "";	/* the current word in the dictionary */
+	bool equal;	/* whether the words are equal */
 
 	/* restart the dictionary */
 	rewind(dict);
 
 	/* search the dictionary */
-	while (read_line(dict, &test)) {
+	while (read_line(dict, &dict_word)) {
+		/* compare first characters */
+		equal = ((*key == *dict_word) /* without capitalizing */
+			| (*key == (*dict_word&'_')) /* with capitalizing */
+		);
+		equal = (equal &	/* rest of the words */
+			(0 == strcmp(key+1, dict_word +1))
+		);
 		/* if found the key */
-		if (0 == strcmp(key, test)) {
+		if (equal) {
 			/* return success */
 			return OK;
 		} /* end if (0 == strcmp(key, test)) */
@@ -154,11 +165,8 @@ read_line(FILE *in, char **pline)
 
 	/* properly terminate the line */
 	line = malloc((n + 1) * sizeof(char));
-	//printf("'%s'\n", raw_line);
-	//printf("%lu\n", n);
 	strncpy(line, raw_line, n);
 	strcat(line, "\0");
-	//printf("'%s'\n", line);
 
 	/* stores the line */
 	*pline = line;
