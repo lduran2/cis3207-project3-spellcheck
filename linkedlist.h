@@ -49,14 +49,6 @@ Queue *queue_new();
 size_t queue_length(Queue *queue);
 
 /**
- * Adds a new data element at the end of the queue.
- * @params
- *   *queue    : Queue = the queue whereto to add
- *   *new_data : void  = the data to add
- */
-void queue_enqueue_of(Queue *queue, void *new_data);
-
-/**
  * Adds a new element at the end of the queue.
  * @params
  *   *queue       : Queue = the queue whereto to add

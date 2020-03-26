@@ -23,7 +23,7 @@ main(int argc, int argv)
 
 	FILE *fdict;	/* default dictionary file */
 	Queue *qdict;	/* queue containing the dictionary */
-	Node *ndict;	/* points to first element in dictionary */
+	Node *ldict;	/* list of dictionary terms */
 
 	qdict = queue_new();
 
@@ -36,14 +36,14 @@ main(int argc, int argv)
 	} /* end if (NULL == (dict = fopen(DEFAULT_DICTIONARY))) */
 
 	/* read the dictionary file into the queue */
-	each_line((consume_f)queue_enqueue_of, qdict, fdict);
-	/* get the first node of the dictionary */
-	ndict = qdict->phead->next;
+	each_line(qdict, (reduce_f)queue_enqueue, (map_f)node_new, fdict);
+	/* get the list of the dictionary */
+	ldict = qdict->phead->next;
 
 	/* test each message */
 	for (; *pmessage; ++pmessage) {
 		printf("%s\n", *pmessage);
-		parse(stdout, *pmessage, ndict);
+		parse(stdout, *pmessage, ldict);
 		printf("\n");
 	}
 

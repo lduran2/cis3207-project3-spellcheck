@@ -42,18 +42,6 @@ queue_length(Queue *queue)
 } /* end queue_length(Queue*) */
 
 /**
- * Adds a new data element at the end of the queue.
- * @params
- *   *queue    : Queue = the queue whereto to add
- *   *new_data : void  = the data to add
- */
-void
-queue_enqueue_of(Queue *queue, void *new_data)
-{
-	queue_enqueue(queue, node_new(new_data));
-} /* end queue_enqueue_of(Queue *queue, void *new_data) */
-
-/**
  * Adds a new element at the end of the queue.
  * @params
  *   *queue       : Queue = the queue whereto to add

@@ -1,6 +1,6 @@
 /*
  * ./queue-read.c
- * Provides a function to consume every line of a file into an object.
+ * Provides a function to reduce every line of a file into an object.
  * Created: 2020-03-25 20:42
  * Author : Leomar Duran <https://github.com/lduran2>
  * For    : CIS 3207, Spring 2020
@@ -10,21 +10,22 @@
 /**
  * Consumes each line from a file.
  * @params
- *   consume   : consume_f = the function for consuming each line
- *   *consumer : void      = the object that consumes from the file
- *   *file     : FILE      = the file wherefrom to consume
+ *   *reducer : void     = the object that reduces from the file
+ *   reduce   : reduce_f = the function for reducing each mapped line
+ *   map      : map_f    = the function for mapping each line
+ *   *file    : FILE     = the file wherefrom to reduce
  */
 void
-each_line(consume_f consume, void *consumer, FILE *file)
+each_line(void *reducer, reduce_f reduce, map_f map, FILE *file)
 {
 	char *line = "";	/* the current word in the dictionary */
 
 	/* for each line in the file */
 	while (read_line(file, &line)) {
-		/* push the line onto the queue */
-		consume(consumer, line);
+		/* map every line and reduce into the reducer */
+		reduce(reducer, map(line));
 	} /* end while (read_line(file, )) */
-} /* end each_line(consume_f consume, void *consumer, FILE *dict) */
+} /* end each_line(void *reducer, reduce_f reduce, map_f map, FILE *file) */
 
 /**
  * Reads a line from the file.

@@ -1,6 +1,6 @@
 /*
- * ./parser.h
- * Defines a function to consume every line of a file into an object.
+ * ./queue_read.h
+ * Defines a function to reduce every line of a file into an object.
  * Created: 2020-03-20 22:08
  * Author : Leomar Duran <https://github.com/lduran2>
  * For    : CIS 3207, Spring 2020
@@ -14,22 +14,31 @@
 #define LDURAN2_SPELLCHECK_QUEUE_READ_H
 
 /**
- * Function for consuming from a file.
+ * Function for reducing objects.
  * @params
- *   *consumer : void = the object that consumes the strings
- *   *str      : char = each string to consume
+ *   *reducer : void = the object that reduces
+ *   *obj     : void = each object to reduce
  */
-typedef void (*consume_f)(void *consumer, char *str);
+typedef void (*reduce_f)(void *reducer, void *obj);
+
+/**
+ * Function for mapping strings to object.
+ * @params
+ *   *str : char = the string to map
+ * @returns the output of the mapping.
+ */
+typedef void *(*map_f)(char *str);
 
 /**
  * Consumes each line from a file.
  * @params
- *   consume   : consume_f = the function for consuming each line
- *   *consumer : void      = the object that consumes from the file
- *   *file     : FILE      = the file wherefrom to consume
+ *   *reducer : void     = the object that reduces from the file
+ *   reduce   : reduce_f = the function for reducing each mapped line
+ *   map      : map_f    = the function for mapping each line
+ *   *file    : FILE     = the file wherefrom to reduce
  */
 void
-each_line(consume_f consume, void *consumer, FILE *file);
+each_line(void *reducer, reduce_f reduce, map_f map, FILE *file);
 
 /**
  * Reads a line from the file.
