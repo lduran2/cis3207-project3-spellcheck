@@ -17,7 +17,7 @@
  * @returns true on success, false on failure.
  */
 void
-parse(FILE *out, char *haystack, FILE *dict)
+parse(FILE *out, char *haystack, Node *dict)
 {
 	/* whether the state is in the separator class */
 	bool in_separator = false;
@@ -72,7 +72,7 @@ parse(FILE *out, char *haystack, FILE *dict)
  *   *end    : char  = the end of the substring (exclusive)
  */
 void
-validate_next_word(FILE *out, char *offset, char *end, FILE *dict)
+validate_next_word(FILE *out, char *offset, char *end, Node *dict)
 {
 	int len;	/* length of the new word */
 	char *new_word = NULL;	/* the new word */
@@ -107,7 +107,7 @@ validate_next_word(FILE *out, char *offset, char *end, FILE *dict)
  *   "MISSPELLED" -- otherwise
  */
 const char*
-validate(char *key, FILE *dict)
+validate(char *key, Node *dict)
 {
 	/* constants to return */
 	static const char *OK = "OK";	/* success */
@@ -116,11 +116,9 @@ validate(char *key, FILE *dict)
 	char *dict_word = "";	/* the current word in the dictionary */
 	bool equal;	/* whether the words are equal */
 
-	/* restart the dictionary */
-	rewind(dict);
-
 	/* search the dictionary */
-	while (read_line(dict, &dict_word)) {
+	for (; dict; dict = dict->next) {
+		dict_word = dict->data;
 		/* compare first characters */
 		equal = ((*key == *dict_word) /* without capitalizing */
 			| (*key == (*dict_word&'_')) /* with capitalizing */
@@ -138,41 +136,6 @@ validate(char *key, FILE *dict)
 	/* return failure */
 	return MISSPELLED;
 } /* end validate(char *word, FILE *dict) */
-
-/**
- * Reads a line from the file.
- * @params
- *   *in    : FILE  = file wherefrom to read
- *   *pline : char* = pointer to the string read
- * @returns whether a line was read
- */
-bool
-read_line(FILE *in, char **pline)
-{
-	char *line;	/* local read */
-	char *raw_line = NULL;	/* line read in, raw from getline */
-	size_t n = 0;	/* line length */
-
-	/* accept a new raw line */
-	getline(&raw_line, &n, in);
-
-	/* get the length removing the line feed '\n' */
-	n = (strlen(raw_line) - 1);
-	/* return false if no characters were read */
-	if ((long signed)n <= 0) {
-		return false;
-	} /* end read_line(FILE *in, char **pline) if (n <= 0) */
-
-	/* properly terminate the line */
-	line = malloc((n + 1) * sizeof(char));
-	strncpy(line, raw_line, n);
-	strcat(line, "\0");
-
-	/* stores the line */
-	*pline = line;
-	/* return that a string was read */
-	return true;
-} /* end read_line(FILE *in, char **pline) */
 
 /**
  * Test whether a character is a word character.

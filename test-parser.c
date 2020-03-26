@@ -6,6 +6,7 @@
  * For    : CIS 3207, Spring 2020
  */
 #include "parser.h"
+#include "queue-read.h"
 #define DEFAULT_DICTIONARY "/usr/share/dict/words"
 
 int
@@ -20,20 +21,29 @@ main(int argc, int argv)
 	};
 	char **pmessage = messages;	/* pointer to message */
 
-	FILE *dict;	/* default dictionary */
+	FILE *fdict;	/* default dictionary file */
+	Queue *qdict;	/* queue containing the dictionary */
+	Node *ndict;	/* points to first element in dictionary */
+
+	qdict = queue_new();
 
 	/* open the dictionary and make sure it exists */
-	if (NULL == (dict = fopen(DEFAULT_DICTIONARY, "r"))) {
+	if (NULL == (fdict = fopen(DEFAULT_DICTIONARY, "r"))) {
 		fprintf(stderr, 
 			"Default dictionary %s file not found.",
 			DEFAULT_DICTIONARY);
 		return 1;
 	} /* end if (NULL == (dict = fopen(DEFAULT_DICTIONARY))) */
 
+	/* read the dictionary file into the queue */
+	each_line((consume_f)queue_enqueue_of, qdict, fdict);
+	/* get the first node of the dictionary */
+	ndict = qdict->phead->next;
+
 	/* test each message */
 	for (; *pmessage; ++pmessage) {
 		printf("%s\n", *pmessage);
-		parse(stdout, *pmessage, dict);
+		parse(stdout, *pmessage, ndict);
 		printf("\n");
 	}
 

@@ -6,6 +6,7 @@
  * Author : Leomar Duran <https://github.com/lduran2>
  * For    : CIS 3207, Spring 2020
  */
+#include "linkedlist.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -24,7 +25,7 @@
  * @returns true on success, false on failure.
  */
 void
-parse(FILE *out, char *haystack, FILE *dict);
+parse(FILE *out, char *haystack, Node *dict);
 
 /**
  * Validates the string between *offset inclusive and *end exclusive.
@@ -34,7 +35,7 @@ parse(FILE *out, char *haystack, FILE *dict);
  *   *end    : char  = the end of the substring (exclusive)
  */
 void
-validate_next_word(FILE *out, char *offset, char *end, FILE *dict);
+validate_next_word(FILE *out, char *offset, char *end, Node *dict);
 
 /**
  * Validates a word against the dictionary.
@@ -46,17 +47,7 @@ validate_next_word(FILE *out, char *offset, char *end, FILE *dict);
  *   "MISSPELLED" -- otherwise
  */
 const char*
-validate(char *key, FILE *dict);
-
-/**
- * Reads a line from the file.
- * @params
- *   *in    : FILE  = file wherefrom to read
- *   *pline : char* = pointer to the string read
- * @returns whether a line was read
- */
-bool
-read_line(FILE *in, char **pline);
+validate(char *key, Node *dict);
 
 /**
  * Test whether a character is a word character.
