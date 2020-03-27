@@ -1,14 +1,18 @@
 COMPILE = gcc -g
 TESTOUTPUTS = test-*.o test-*.out
-ALLOUTPUTS = *.o shell.out $(TESTOUTPUTS)
+ALLOUTPUTS = a.out *.o $(TESTOUTPUTS)
 
-#default: shell
+server: server.o queue-read.o linkedlist.o
+	$(COMPILE) $^ -o $@.out
 
 test-parser: test-parser.o parser.o queue-read.o linkedlist.o
 	$(COMPILE) $^ -o $@.out
 
 test-parser.o: test-parser.c
-	$(COMPILE) -c $^
+	$(COMPILE) -c $<
+
+server.o: server.c
+	$(COMPILE) -c $<
 
 queue-read.o: queue-read.c queue-read.h
 	$(COMPILE) -c $<

@@ -118,16 +118,9 @@ validate(char *key, Node *dict)
 
 	/* search the dictionary */
 	for (; dict; dict = dict->next) {
-		dict_word = dict->data;
-		/* compare first characters */
-		equal = ((*key == *dict_word) /* without capitalizing */
-			| (*key == (*dict_word&'_')) /* with capitalizing */
-		);
-		equal = (equal &	/* rest of the words */
-			(0 == strcmp(key+1, dict_word +1))
-		);
+		/* compare the key to the current word */
 		/* if found the key */
-		if (equal) {
+		if (words_equal(key, dict->data)) {
 			/* return success */
 			return OK;
 		} /* end if (0 == strcmp(key, test)) */
@@ -136,6 +129,23 @@ validate(char *key, Node *dict)
 	/* return failure */
 	return MISSPELLED;
 } /* end validate(char *word, FILE *dict) */
+
+/**
+ * Compares the word `to_check` against the word `correct`.
+ */
+bool
+words_equal(char *to_check, char *correct)
+{
+	return (
+		/* compare first character */
+		(
+			(*to_check == *correct) /* without capital */
+			|| (*to_check==(*correct & '_')) /* with capital */
+		)
+		/* compare rest of the words */
+		&& (0 == strcmp(key + 1, correct + 1))
+	);
+} /* end words_equal(char *to_check, char *correct) */
 
 /**
  * Test whether a character is a word character.
